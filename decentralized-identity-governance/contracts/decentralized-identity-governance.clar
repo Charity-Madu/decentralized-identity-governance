@@ -388,3 +388,12 @@
     (/ (* (get amount staking-info) (get boost-factor staking-info)) u100)
   )
 )
+
+;; Helper function to check identity level
+(define-private (is-identity-level-minimum (user principal) (min-level uint))
+  (let ((identity (map-get? identity-profiles user)))
+    (if (is-none identity)
+      false
+      (>= (get verification-level (unwrap-panic identity)) min-level))
+  )
+)
