@@ -216,3 +216,76 @@
     )
   )
 )
+
+(define-constant IDENTITY-ENTERPRISE u4)
+(define-constant IDENTITY-GUARDIAN u5)
+
+(define-constant PROPOSAL-PENDING-REVIEW u4)
+(define-constant PROPOSAL-IMPLEMENTATION u5)
+(define-constant PROPOSAL-CANCELLED u6)
+
+(define-data-var protocol-upgrade-timelock uint u1440) ;; 24 hours in blocks
+(define-data-var emergency-mode bool false)
+(define-data-var guardian-multisig-threshold uint u3) ;; Require 3 guardians for emergency actions
+(define-data-var oracle-update-frequency uint u144) ;; Update every ~24 hours (assuming 10 min blocks)
+
+;; Enhanced identity structure with biometric verification and recovery options
+(define-map enhanced-identity-details
+  principal
+  {
+    biometric-hash: (optional (buff 64)),
+    recovery-contacts: (list 3 principal),
+    last-verification-date: uint,
+    risk-score: uint,
+    identity-metadata: (list 10 {
+      meta-key: (string-utf8 30),
+      meta-value: (string-utf8 100),
+      is-public: bool
+    }),
+    compliance-status: {
+      last-check: uint,
+      status-code: uint,
+      jurisdiction: (string-utf8 30)
+    }
+  }
+)
+
+;; Delegated authority system
+(define-map delegations
+  { delegator: principal, action-type: (string-utf8 30) }
+  {
+    delegate: principal,
+    restrictions: (list 5 {
+      restriction-type: (string-utf8 30),
+      restriction-value: (string-utf8 100)
+    }),
+    expiration: uint,
+    revocable: bool
+  }
+)
+
+;; Multi-signature control
+(define-map multisig-requirements
+  (string-utf8 30) ;; action type
+  {
+    required-signers: uint,
+    authorized-signers: (list 10 principal),
+    timelock-blocks: uint
+  }
+)
+
+
+;; Pending multisig transactions
+(define-map pending-multisig-txs
+  uint ;; transaction-id
+  {
+    action-type: (string-utf8 30),
+    initiator: principal,
+    signers: (list 10 principal),
+    params: (list 5 {
+      param-name: (string-utf8 30),
+      param-value: (string-utf8 100)
+    }),
+    expiration-height: uint
+  }
+)
