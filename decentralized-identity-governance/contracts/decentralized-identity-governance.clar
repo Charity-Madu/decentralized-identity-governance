@@ -155,3 +155,64 @@
     min-identity-level: uint
   }
 )
+
+(define-read-only (get-proposal (proposal-id uint))
+  (map-get? governance-proposals proposal-id)
+)
+
+(define-read-only (get-vote (proposal-id uint) (voter principal))
+  (map-get? votes { proposal-id: proposal-id, voter: voter })
+)
+
+(define-read-only (get-contract-admin)
+  (var-get admin-address)
+)
+
+(define-read-only (is-contract-paused)
+  (var-get contract-paused)
+)
+
+(define-read-only (get-fee-basis-points)
+  (var-get fee-basis-points)
+)
+
+(define-read-only (get-feature-status (feature-name (string-utf8 50)))
+  (map-get? feature-flags feature-name)
+)
+
+(define-read-only (check-rate-limit (user principal))
+  (let ((user-limits (default-to 
+    { last-action-time: u0, action-count: u0, timeout-until: u0 } 
+    (map-get? rate-limits user))))
+    (< (get timeout-until user-limits) stacks-block-height)
+  )
+)
+
+
+(define-private (is-contract-owner)
+  (is-eq tx-sender CONTRACT-OWNER)
+)
+
+(define-private (is-admin (address principal))
+  (or (is-eq address CONTRACT-OWNER) (is-eq address (var-get admin-address)))
+)
+
+(define-private (update-rate-limit (user principal))
+  (let ((current-limits (default-to 
+        { last-action-time: u0, action-count: u0, timeout-until: u0 } 
+        (map-get? rate-limits user)))
+        (current-block stacks-block-height))
+    (if (is-eq (get last-action-time current-limits) current-block)
+      (let ((new-count (+ u1 (get action-count current-limits))))
+        (map-set rate-limits user
+          (merge current-limits {
+            action-count: new-count,
+            timeout-until: (if (> new-count u5)
+                            (+ current-block u10)
+                            (get timeout-until current-limits))
+          })))
+      (map-set rate-limits user
+        { last-action-time: current-block, action-count: u1, timeout-until: u0 })
+    )
+  )
+)
