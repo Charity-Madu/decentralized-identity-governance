@@ -77,3 +77,81 @@
     }
   }
 )
+
+;; Credential Issuer Reputation
+(define-map credential-issuer-reputation
+  principal
+  {
+    total-credentials-issued: uint,
+    valid-credentials: uint,
+    revoked-credentials: uint,
+    reputation-score: uint
+  }
+)
+
+;; Read-only Functions for Retrieving Information
+(define-read-only (get-identity-profile (subject principal))
+  (map-get? identity-profiles subject)
+)
+
+
+(define-read-only (get-credential-issuer-reputation (issuer principal))
+  (map-get? credential-issuer-reputation issuer)
+)
+
+;; Governance Proposals
+(define-map governance-proposals
+  uint
+  {
+    id: uint,
+    title: (string-utf8 100),
+    description: (string-utf8 500),
+    proposer: principal,
+    start-block-height: uint,
+    end-block-height: uint,
+    status: uint,
+    yes-votes: uint,
+    no-votes: uint,
+    executed: bool,
+    execution-params: (list 5 {
+      param-name: (string-utf8 50),
+      param-value: (string-utf8 100)
+    })
+  }
+)
+
+;; Vote Registry
+(define-map votes
+  { proposal-id: uint, voter: principal }
+  { vote-type: bool, weight: uint, timestamp: uint }
+)
+
+;; Activity Log
+(define-map activity-log
+  { user: principal, action-id: uint }
+  {
+    action-type: (string-utf8 50),
+    timestamp: uint,
+    metadata: (optional (string-utf8 200))
+  }
+)
+
+;; Rate Limiting
+(define-map rate-limits
+  principal
+  {
+    last-action-time: uint,
+    action-count: uint,
+    timeout-until: uint
+  }
+)
+
+;; Feature Flags
+(define-map feature-flags
+  (string-utf8 50)
+  {
+    enabled: bool,
+    admin-only: bool,
+    min-identity-level: uint
+  }
+)
